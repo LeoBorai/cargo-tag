@@ -90,14 +90,14 @@ impl Git {
 
     /// Creates a `Signature` using the instance's `email` and `name` along with
     /// the current time
-    fn signature(&self) -> Result<Signature, Box<dyn std::error::Error>> {
+    fn signature(&self) -> Result<Signature<'_>, Box<dyn std::error::Error>> {
         let signature = Signature::now(&self.name, &self.email)?;
 
         Ok(signature)
     }
 
     /// Creates a Git tree by adding all the files in the current repository
-    fn tagging_tree(&self) -> Result<Tree, Box<dyn std::error::Error>> {
+    fn tagging_tree(&self) -> Result<Tree<'_>, Box<dyn std::error::Error>> {
         let mut index = self.repo.index()?;
 
         index.add_all(["*"].iter(), IndexAddOption::DEFAULT, None)?;
