@@ -27,6 +27,12 @@ pub struct TagArgs {
     #[command(subcommand)]
     pub command: Command,
 
+    /// Prefix string for Git tags
+    #[arg(short, long)]
+    pub prefix: Option<String>,
+
+    /// Get name and email from environment variables CARGO_TAG_NAME and CARGO_TAG_EMAIL.
+    /// They must be set beforehand.
     #[arg(long)]
     pub env: bool,
 }
@@ -44,7 +50,7 @@ pub enum Command {
 }
 
 impl Command {
-    pub fn exec(&self, env: bool) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn exec(&self, prefix: String, env: bool) -> Result<(), Box<dyn std::error::Error>> {
         match *self {
             Command::Current => {
                 let cargo_toml = CargoToml::open().unwrap();
@@ -72,15 +78,16 @@ impl Command {
                     .expect("Failed to write version to Cargo.toml");
 
                 cargo_toml
-                    .run_cargo_check()
-                    .expect("Failed to run `cargo check`");
+                    .run_cargo_fetch()
+                    .expect("Failed to run `cargo fetch`");
 
+                let version_str = prefix + version.to_string().as_str();
                 repository
-                    .commit(&format!("chore: bump version to {}", version))
+                    .commit(&format!("chore: bump version to {}", version_str))
                     .expect("Failed to commit files");
 
                 repository
-                    .tag(&version, "chore: bump version to {}")
+                    .tag(&version_str, "chore: bump version to {}")
                     .expect("Failed to create Git tag");
             }
         }
