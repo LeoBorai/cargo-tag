@@ -63,12 +63,12 @@ impl CargoToml {
         Ok(())
     }
 
-    /// Executes `cargo check`. This is useful after updating the version in
+    /// Executes `cargo fetch`. This is useful after updating the version in
     /// the `Cargo.toml` file to ensure `Cargo.lock` has the correct version.
-    pub fn run_cargo_check(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn run_cargo_fetch(&self) -> Result<(), Box<dyn std::error::Error>> {
         let mut cmd = Command::new("cargo");
 
-        cmd.arg("check");
+        cmd.arg("fetch");
         cmd.stderr(Stdio::inherit());
         cmd.status()?;
 

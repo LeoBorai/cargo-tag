@@ -26,7 +26,7 @@ Cargo.toml and Cargo.lock files are updated with the new version, then a Git
 commit and a Git tag are both created.
 
 ```
-Usage: cargo-tag [COMMAND]
+Usage: cargo tag [OPTIONS] <COMMAND>
 
 Commands:
   current
@@ -41,11 +41,12 @@ Commands:
           Print this message or the help of the given subcommand(s)
 
 Options:
+  -p, --prefix <PREFIX>
+          Prefix string for Git tags
+      --env
+          Get name and email from environment variables CARGO_TAG_NAME and CARGO_TAG_EMAIL. They must be set beforehand.
   -h, --help
-          Print help information (use `-h` for a summary)
-
-  -V, --version
-          Print version information
+          Print help
 ```
 
 ## Installation
@@ -55,6 +56,13 @@ cargo install cargo-tag
 ```
 
 > Requires Git to be installed in your system.
+
+Using:
+```bash
+cargo tag patch
+# or
+cargo tag -p=v patch
+```
 
 ## Contributing
 
