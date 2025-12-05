@@ -11,29 +11,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: rustfmt
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
 
       - name: Cache .cargo and target
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo
             ./target
           key: ${{ runner.os }}-cargo-fmt-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-fmt-${{ hashFiles('**/Cargo.lock') }}
-            ${{ runner.os }}-cargo-fmt
 
       - name: Run fmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+        run: cargo fmt --all -- --check
