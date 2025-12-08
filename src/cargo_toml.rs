@@ -4,6 +4,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
+use anyhow::Result;
 use semver::Version as SemVer;
 use serde::Deserialize;
 
@@ -48,7 +49,7 @@ impl CargoToml {
     }
 
     /// Update's current `Cargo.toml` version
-    pub fn write_version(&self, version: &Version) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn write_version(&self, version: &Version) -> Result<()> {
         let file_str = read_to_string(&self.meta.path)?;
         let mut document = file_str.parse::<toml_edit::DocumentMut>()?;
 
@@ -65,7 +66,7 @@ impl CargoToml {
 
     /// Executes `cargo fetch`. This is useful after updating the version in
     /// the `Cargo.toml` file to ensure `Cargo.lock` has the correct version.
-    pub fn run_cargo_fetch(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn run_cargo_fetch(&self) -> Result<()> {
         let mut cmd = Command::new("cargo");
 
         cmd.arg("fetch");

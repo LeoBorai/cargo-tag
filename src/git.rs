@@ -1,5 +1,6 @@
 use std::env::current_dir;
 
+use anyhow::{Context, Result};
 use git2::{Config, IndexAddOption, Repository, Signature, Tree};
 
 /// Performs Git related operations in the crate's repository
@@ -16,11 +17,11 @@ impl Git {
     /// # Panics
     ///
     /// If `CARGO_TAG_EMAIL` or `CARGO_TAG_NAME` is not set
-    pub fn from_env(branch: &str) -> Self {
-        let email = std::env::var("CARGO_TAG_EMAIL").expect("CARGO_TAG_EMAIL not set");
-        let name = std::env::var("CARGO_TAG_NAME").expect("CARGO_TAG_NAME not set");
+    pub fn from_env(branch: &str) -> Result<Self> {
+        let email = std::env::var("CARGO_TAG_EMAIL").context("CARGO_TAG_EMAIL not set")?;
+        let name = std::env::var("CARGO_TAG_NAME").context("CARGO_TAG_NAME not set")?;
 
-        Git::open(branch, &email, &name).expect("Failed to open Git repository")
+        Git::open(branch, &email, &name)
     }
 
     /// Creates `Git` client from git config
@@ -28,22 +29,22 @@ impl Git {
     /// # Panics
     ///
     /// If `user.email` or `user.name` are not found
-    pub fn from_git_config(branch: &str) -> Self {
-        let cfg = Config::open_default().expect("Cannot open git config");
+    pub fn from_git_config(branch: &str) -> Result<Self> {
+        let cfg = Config::open_default().context("Cannot open git config")?;
+        let email = cfg
+            .get_entry("user.email")
+            .context("user.email not found")?;
+        let email = email.value().context("user.email not utf8")?;
+        let name = cfg.get_entry("user.name").context("user.name not found")?;
+        let name = name.value().context("user.name not utf8")?;
 
-        let email = cfg.get_entry("user.email").expect("user.email not found");
-        let email = email.value().expect("user.email not utf8");
-
-        let name = cfg.get_entry("user.name").expect("user.name not found");
-        let name = name.value().expect("user.name not utf8");
-
-        Git::open(branch, email, name).expect("Failed to open Git repository")
+        Git::open(branch, email, name).context("Failed to open Git repository")
     }
 
     /// Opens the Git repository in the current working directory and uses the
     /// provided `email`, `name` and `branch` to perform Git operations like
     /// `commit` and `tag`.
-    pub fn open(branch: &str, email: &str, name: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn open(branch: &str, email: &str, name: &str) -> Result<Self> {
         let cwd = current_dir()?;
         let repo = Repository::open(cwd)?;
 
@@ -57,7 +58,7 @@ impl Git {
 
     /// Creates a commit with instance's Email, Name and Branch with the
     /// taggging tree set. This means, adding `Cargo.toml` and `Cargo.lock`.
-    pub fn commit(&self, message: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn commit(&self, message: &str) -> Result<()> {
         let signature = self.signature()?;
         let head = self.repo.head()?.peel_to_commit()?;
         let tree = self.tagging_tree()?;
@@ -75,7 +76,7 @@ impl Git {
     }
 
     /// Creates a Git Tag with the provided `Version`
-    pub fn tag(&self, version_str: &str, message: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn tag(&self, version_str: &str, message: &str) -> Result<()> {
         let tagger = self.signature()?;
         let head = self.repo.head()?.peel_to_commit()?;
         let obj = head.as_object();
@@ -87,14 +88,14 @@ impl Git {
 
     /// Creates a `Signature` using the instance's `email` and `name` along with
     /// the current time
-    fn signature(&self) -> Result<Signature<'_>, Box<dyn std::error::Error>> {
+    fn signature(&self) -> Result<Signature<'_>> {
         let signature = Signature::now(&self.name, &self.email)?;
 
         Ok(signature)
     }
 
     /// Creates a Git tree by adding all the files in the current repository
-    fn tagging_tree(&self) -> Result<Tree<'_>, Box<dyn std::error::Error>> {
+    fn tagging_tree(&self) -> Result<Tree<'_>> {
         let mut index = self.repo.index()?;
 
         index.add_all(["*"].iter(), IndexAddOption::DEFAULT, None)?;
