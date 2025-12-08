@@ -48,23 +48,13 @@ jobs:
 
       - name: Install Rust Binaries
         run: |
-          cargo binstall -y --force cargo-edit
+          cargo binstall -y --force cargo-tag
 
-      - id: cargo-set-version
-        name: Set Version
-        run: cargo set-version --bump ${{ inputs.version }}
-
-      - name: Set Crate Version as Environment Variable
-        run: |
-          CARGO_TOML_VERSION=$(awk -F ' = ' '$1 ~ /version/ { gsub(/[\"]/, "", $2); printf("%s", $2); exit }' Cargo.toml)
-          echo "CRATE_VERSION=$CARGO_TOML_VERSION" >> $GITHUB_ENV
-
-      - name: Create Commit
+      - name: Bump Version
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add .
-          git commit -m "chore: bump version to v$CRATE_VERSION"
+          echo "CRATE_VERSION=$(cargo tag -p=v ${{ inputs.version }})" >> $GITHUB_ENV
           git push origin main --follow-tags
 
       - uses: rust-lang/crates-io-auth-action@v1
@@ -77,8 +67,8 @@ jobs:
 
       - name: Create Release
         run: |
-          gh release create "v$CRATE_VERSION" \
-            --title "v$CRATE_VERSION" \
+          gh release create "$CRATE_VERSION" \
+            --title "$CRATE_VERSION" \
             --draft=false \
             --generate-notes \
             --prerelease=false
