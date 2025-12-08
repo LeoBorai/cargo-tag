@@ -54,7 +54,10 @@ jobs:
         run: echo "CRATE_VERSION=$(cargo tag -p=v ${{ inputs.version }})" >> $GITHUB_ENV
 
       - name: Push Commit & Tags
-        run: git push origin main --follow-tags
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git push origin main --follow-tags
 
       - uses: rust-lang/crates-io-auth-action@v1
         id: auth
