@@ -83,6 +83,8 @@ impl Command {
 
                 repository.commit(&format!("chore: bump version to {}", version_str))?;
                 repository.tag(&version_str, "chore: bump version to {}")?;
+
+                println!("{version_str}")
             }
         }
 
