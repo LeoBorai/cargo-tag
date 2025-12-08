@@ -1,3 +1,4 @@
+use anyhow::{Error, Result};
 use clap::{Parser, Subcommand};
 
 use crate::cargo_toml::CargoToml;
@@ -19,6 +20,7 @@ commit and a Git tag are both created."#;
 #[command(next_line_help = true)]
 #[command(name = "cargo", author, version, about, long_about = Some(ABOUT))]
 pub enum Cli {
+    /// Bump crate's version and create a Git tag
     Tag(TagArgs),
 }
 
@@ -50,7 +52,7 @@ pub enum Command {
 }
 
 impl Command {
-    pub fn exec(&self, prefix: String, env: bool) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn exec(&self, prefix: String, env: bool) -> Result<()> {
         match *self {
             Command::Current => {
                 let cargo_toml = CargoToml::open().unwrap();
@@ -58,11 +60,12 @@ impl Command {
                 println!("{}", cargo_toml.package.version);
             }
             Command::Major | Command::Minor | Command::Patch => {
-                let cargo_toml = CargoToml::open()?;
+                let cargo_toml = CargoToml::open()
+                    .map_err(|err| Error::msg(format!("Failed to open 'Cargo.toml'. {err}")))?;
                 let repository = if env {
-                    Git::from_env("main")
+                    Git::from_env("main")?
                 } else {
-                    Git::from_git_config("main")
+                    Git::from_git_config("main")?
                 };
                 let mut version = Version::from(&cargo_toml.package.version);
 
@@ -73,22 +76,13 @@ impl Command {
                     _ => unreachable!(),
                 };
 
-                cargo_toml
-                    .write_version(&version)
-                    .expect("Failed to write version to Cargo.toml");
-
-                cargo_toml
-                    .run_cargo_fetch()
-                    .expect("Failed to run `cargo fetch`");
+                cargo_toml.write_version(&version)?;
+                cargo_toml.run_cargo_fetch()?;
 
                 let version_str = prefix + version.to_string().as_str();
-                repository
-                    .commit(&format!("chore: bump version to {}", version_str))
-                    .expect("Failed to commit files");
 
-                repository
-                    .tag(&version_str, "chore: bump version to {}")
-                    .expect("Failed to create Git tag");
+                repository.commit(&format!("chore: bump version to {}", version_str))?;
+                repository.tag(&version_str, "chore: bump version to {}")?;
             }
         }
 
