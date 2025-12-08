@@ -71,7 +71,7 @@ jobs:
 
       - name: Create Release
         run: |
-          gh release create "v$CRATE_VERSION" \
+          gh release create "$CRATE_VERSION" \
             --title "$CRATE_VERSION" \
             --draft=false \
             --generate-notes \
