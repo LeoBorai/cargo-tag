@@ -96,8 +96,13 @@ impl Command {
         let prefix = args.prefix.clone().unwrap_or_default();
         let version_str = prefix + &version.to_string();
 
-        repository.commit(&format!("chore: bump version to {}", version_str))?;
-        repository.tag(&version_str, "chore: bump version to {}")?;
+        if !args.no_commit {
+            repository.commit(&format!("chore: bump version to {}", version_str))?;
+        }
+
+        if !args.no_tag {
+            repository.tag(&version_str, "chore: bump version to {}")?;
+        }
 
         println!("{version_str}");
 
