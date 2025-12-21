@@ -113,7 +113,10 @@ impl Command {
             }
 
             if !args.no_tag {
-                repository.tag(&version_str, &format!("chore: bump version to {}", version_str))?;
+                repository.tag(
+                    &version_str,
+                    &format!("chore: bump version to {}", version_str),
+                )?;
             }
         }
 
