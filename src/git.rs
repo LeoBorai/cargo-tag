@@ -1,5 +1,3 @@
-use std::env::current_dir;
-
 use anyhow::{Context, Result};
 use git2::{Config, IndexAddOption, Repository, Signature, Tree};
 
@@ -45,8 +43,7 @@ impl Git {
     /// provided `email`, `name` and `branch` to perform Git operations like
     /// `commit` and `tag`.
     pub fn open(branch: &str, email: &str, name: &str) -> Result<Self> {
-        let cwd = current_dir()?;
-        let repo = Repository::open(cwd)?;
+        let repo = Repository::open_from_env()?;
 
         Ok(Self {
             email: email.into(),
