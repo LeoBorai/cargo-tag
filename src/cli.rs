@@ -1,4 +1,4 @@
-use anyhow::{Error, Result};
+use anyhow::Result;
 use clap::{Parser, Subcommand};
 
 use crate::cargo_toml::CargoToml;
@@ -33,6 +33,14 @@ pub struct TagArgs {
     #[arg(short, long)]
     pub prefix: Option<String>,
 
+    /// Skip creating a Git commit
+    #[arg(long)]
+    pub no_commit: bool,
+
+    /// Skip creating a Git tag
+    #[arg(long)]
+    pub no_tag: bool,
+
     /// Get name and email from environment variables CARGO_TAG_NAME and CARGO_TAG_EMAIL.
     /// They must be set beforehand.
     #[arg(long)]
@@ -55,23 +63,20 @@ pub enum Command {
 }
 
 impl Command {
-    pub fn exec(&self, prefix: String, env: bool) -> Result<()> {
+    pub fn exec(&self, args: &TagArgs) -> Result<()> {
+        let cargo_toml = CargoToml::open()?;
+        let repository = if args.env {
+            Git::from_env("main")?
+        } else {
+            Git::from_git_config("main")?
+        };
+        let mut version = Version::from(&cargo_toml.package.version);
+
         match *self {
             Command::Current => {
-                let cargo_toml = CargoToml::open().unwrap();
-
                 println!("{}", cargo_toml.package.version);
             }
             Command::Major | Command::Minor | Command::Patch => {
-                let cargo_toml = CargoToml::open()
-                    .map_err(|err| Error::msg(format!("Failed to open 'Cargo.toml'. {err}")))?;
-                let repository = if env {
-                    Git::from_env("main")?
-                } else {
-                    Git::from_git_config("main")?
-                };
-                let mut version = Version::from(&cargo_toml.package.version);
-
                 match self {
                     Command::Major => version.bump_major(),
                     Command::Minor => version.bump_minor(),
@@ -81,36 +86,26 @@ impl Command {
 
                 cargo_toml.write_version(&version)?;
                 cargo_toml.run_cargo_fetch()?;
-
-                let version_str = prefix + version.to_string().as_str();
-
-                repository.commit(&format!("chore: bump version to {}", version_str))?;
-                repository.tag(&version_str, "chore: bump version to {}")?;
-
-                println!("{version_str}")
             }
             Command::PreRelease { ref prerelease } => {
-                let cargo_toml = CargoToml::open()
-                    .map_err(|err| Error::msg(format!("Failed to open 'Cargo.toml'. {err}")))?;
-                let repository = if env {
-                    Git::from_env("main")?
-                } else {
-                    Git::from_git_config("main")?
-                };
-                let mut version = Version::from(&cargo_toml.package.version);
-
                 version.set_prerelease(prerelease)?;
                 cargo_toml.write_version(&version)?;
                 cargo_toml.run_cargo_fetch()?;
-
-                let version_str = prefix + version.to_string().as_str();
-
-                repository.commit(&format!("chore: bump version to {}", version_str))?;
-                repository.tag(&version_str, "chore: bump version to {}")?;
-
-                println!("{version_str}")
             }
         }
+
+        let prefix = args.prefix.clone().unwrap_or_default();
+        let version_str = prefix + &version.to_string();
+
+        if !args.no_commit {
+            repository.commit(&format!("chore: bump version to {}", version_str))?;
+        }
+
+        if !args.no_tag {
+            repository.tag(&version_str, "chore: bump version to {}")?;
+        }
+
+        println!("{version_str}");
 
         Ok(())
     }

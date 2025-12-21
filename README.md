@@ -26,6 +26,8 @@ Cargo.toml and Cargo.lock files are updated with the new version, then a Git
 commit and a Git tag are both created.
 
 ```
+Bump crate's version and create a Git tag
+
 Usage: cargo tag [OPTIONS] <COMMAND>
 
 Commands:
@@ -37,14 +39,20 @@ Commands:
           Bumps crate's major version and create a git tag
   patch
           Bumps crate's patch version and create a git tag
+  pre-release
+          Sets the provided prerelease string and create a git tag
   help
           Print this message or the help of the given subcommand(s)
 
 Options:
   -p, --prefix <PREFIX>
           Prefix string for Git tags
+      --no-commit
+          Skip creating a Git commit
+      --no-tag
+          Skip creating a Git tag
       --env
-          Get name and email from environment variables CARGO_TAG_NAME and CARGO_TAG_EMAIL. They must be set beforehand.
+          Get name and email from environment variables CARGO_TAG_NAME and CARGO_TAG_EMAIL. They must be set beforehand
   -h, --help
           Print help
 ```

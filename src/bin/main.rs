@@ -5,5 +5,5 @@ use clap::Parser;
 
 fn main() -> Result<()> {
     let Cli::Tag(args) = Cli::parse();
-    args.command.exec(args.prefix.unwrap_or_default(), args.env)
+    args.command.exec(&args)
 }
