@@ -1,5 +1,6 @@
 use std::fmt;
 
+use anyhow::{Context, Result};
 use semver::Version as SemVer;
 
 pub struct Version {
@@ -40,6 +41,12 @@ impl Version {
                 self.ver.patch += 1;
             }
         }
+    }
+
+    pub fn set_prerelease(&mut self, prerelease: &str) -> Result<()> {
+        self.ver.pre = semver::Prerelease::new(prerelease)
+            .context(format!("Failed to set prerelase value \"{prerelease}\""))?;
+        Ok(())
     }
 }
 
