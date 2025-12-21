@@ -49,6 +49,8 @@ pub enum Command {
     Major,
     /// Bumps crate's patch version and create a git tag
     Patch,
+    /// Sets the provided prerelease string and create a git tag
+    PreRelease { prerelease: String },
 }
 
 impl Command {
@@ -76,6 +78,27 @@ impl Command {
                     _ => unreachable!(),
                 };
 
+                cargo_toml.write_version(&version)?;
+                cargo_toml.run_cargo_fetch()?;
+
+                let version_str = prefix + version.to_string().as_str();
+
+                repository.commit(&format!("chore: bump version to {}", version_str))?;
+                repository.tag(&version_str, "chore: bump version to {}")?;
+
+                println!("{version_str}")
+            }
+            Command::PreRelease { ref prerelease } => {
+                let cargo_toml = CargoToml::open()
+                    .map_err(|err| Error::msg(format!("Failed to open 'Cargo.toml'. {err}")))?;
+                let repository = if env {
+                    Git::from_env("main")?
+                } else {
+                    Git::from_git_config("main")?
+                };
+                let mut version = Version::from(&cargo_toml.package.version);
+
+                version.set_prerelease(prerelease)?;
                 cargo_toml.write_version(&version)?;
                 cargo_toml.run_cargo_fetch()?;
 
