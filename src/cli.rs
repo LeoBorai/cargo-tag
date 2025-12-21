@@ -50,6 +50,7 @@ pub enum Command {
     /// Bumps crate's patch version and create a git tag
     Patch,
     /// Sets the provided prerelease string and create a git tag
+    #[clap(name = "prerelease")]
     PreRelease { prerelease: String },
 }
 
