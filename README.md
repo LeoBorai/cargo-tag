@@ -53,6 +53,8 @@ Options:
           Skip creating a Git tag
       --env
           Get name and email from environment variables CARGO_TAG_NAME and CARGO_TAG_EMAIL. They must be set beforehand
+      --dry-run
+          Generate tag without writing files or creating git commits/tags
   -h, --help
           Print help
 ```
