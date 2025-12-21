@@ -39,7 +39,7 @@ Commands:
           Bumps crate's major version and create a git tag
   patch
           Bumps crate's patch version and create a git tag
-  pre-release
+  prerelease
           Sets the provided prerelease string and create a git tag
   help
           Print this message or the help of the given subcommand(s)
