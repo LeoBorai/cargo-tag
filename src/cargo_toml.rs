@@ -36,7 +36,7 @@ pub struct Package {
 impl CargoToml {
     /// Attempts to read a `Cargo.toml` in the current directory and retrieves
     /// an instance of `CartToml` from it.
-    pub fn open() -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn open() -> Result<Self> {
         let mut path = current_dir()?;
         path.push(CARGO_TOML);
 
