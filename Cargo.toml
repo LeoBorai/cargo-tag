@@ -1,6 +1,6 @@
 [package]
 name = "cargo-tag"
-version = "0.1.6"
+version = "0.1.6-alpha12345"
 edition = "2021"
 
 license = "MIT"

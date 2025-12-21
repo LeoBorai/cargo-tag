@@ -50,7 +50,7 @@ pub enum Command {
     /// Bumps crate's patch version and create a git tag
     Patch,
     /// Sets the provided prerelease string and create a git tag
-    Prelease { prerelease: String },
+    PreRelease { prerelease: String },
 }
 
 impl Command {
@@ -88,7 +88,7 @@ impl Command {
 
                 println!("{version_str}")
             }
-            Command::Prelease { ref prerelease } => {
+            Command::PreRelease { ref prerelease } => {
                 let cargo_toml = CargoToml::open()
                     .map_err(|err| Error::msg(format!("Failed to open 'Cargo.toml'. {err}")))?;
                 let repository = if env {
