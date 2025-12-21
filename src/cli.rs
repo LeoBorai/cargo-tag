@@ -45,6 +45,10 @@ pub struct TagArgs {
     /// They must be set beforehand.
     #[arg(long)]
     pub env: bool,
+
+    /// Generate tag without writing files or creating git commits/tags
+    #[arg(long)]
+    pub dry_run: bool,
 }
 
 #[derive(Clone, Subcommand, Debug)]
@@ -65,16 +69,12 @@ pub enum Command {
 impl Command {
     pub fn exec(&self, args: &TagArgs) -> Result<()> {
         let cargo_toml = CargoToml::open()?;
-        let repository = if args.env {
-            Git::from_env("main")?
-        } else {
-            Git::from_git_config("main")?
-        };
         let mut version = Version::from(&cargo_toml.package.version);
 
         match *self {
             Command::Current => {
                 println!("{}", cargo_toml.package.version);
+                return Ok(());
             }
             Command::Major | Command::Minor | Command::Patch => {
                 match self {
@@ -84,25 +84,40 @@ impl Command {
                     _ => unreachable!(),
                 };
 
-                cargo_toml.write_version(&version)?;
-                cargo_toml.run_cargo_fetch()?;
+                if !args.dry_run {
+                    cargo_toml.write_version(&version)?;
+                    cargo_toml.run_cargo_fetch()?;
+                }
             }
             Command::PreRelease { ref prerelease } => {
                 version.set_prerelease(prerelease)?;
-                cargo_toml.write_version(&version)?;
-                cargo_toml.run_cargo_fetch()?;
+                if !args.dry_run {
+                    cargo_toml.write_version(&version)?;
+                    cargo_toml.run_cargo_fetch()?;
+                }
             }
         }
 
         let prefix = args.prefix.clone().unwrap_or_default();
         let version_str = prefix + &version.to_string();
 
-        if !args.no_commit {
-            repository.commit(&format!("chore: bump version to {}", version_str))?;
-        }
+        if !args.dry_run {
+            let repository = if args.env {
+                Git::from_env("main")?
+            } else {
+                Git::from_git_config("main")?
+            };
 
-        if !args.no_tag {
-            repository.tag(&version_str, "chore: bump version to {}")?;
+            if !args.no_commit {
+                repository.commit(&format!("chore: bump version to {}", version_str))?;
+            }
+
+            if !args.no_tag {
+                repository.tag(
+                    &version_str,
+                    &format!("chore: bump version to {}", version_str),
+                )?;
+            }
         }
 
         println!("{version_str}");
