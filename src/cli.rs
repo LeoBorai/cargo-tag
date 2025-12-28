@@ -69,11 +69,11 @@ pub enum Command {
 impl Command {
     pub fn exec(&self, args: &TagArgs) -> Result<()> {
         let cargo_toml = CargoToml::open()?;
-        let mut version = Version::from(&cargo_toml.package.version);
+        let mut version = Version::from(&cargo_toml.manifest.package().version);
 
         match *self {
             Command::Current => {
-                println!("{}", cargo_toml.package.version);
+                println!("{}", cargo_toml.manifest.package().version);
                 return Ok(());
             }
             Command::Major | Command::Minor | Command::Patch => {

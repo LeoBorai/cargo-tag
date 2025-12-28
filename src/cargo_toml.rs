@@ -21,9 +21,28 @@ pub struct Metadata {
 /// A `Cargo.toml` file's representation as a struct
 #[derive(Debug, Deserialize)]
 pub struct CargoToml {
-    pub(crate) package: Package,
+    #[serde(flatten)]
+    pub(crate) manifest: Manifest,
     #[serde(skip_deserializing)]
     pub(crate) meta: Metadata,
+}
+
+#[derive(Debug, Deserialize)]
+pub enum Manifest {
+    #[serde(rename = "package")]
+    Package(Package),
+    #[serde(rename = "workspace")]
+    Workspace { package: Package },
+}
+
+impl Manifest {
+    /// Retrieves the package from either `package` or `workspace` tables
+    pub fn package(&self) -> &Package {
+        match self {
+            Manifest::Package(package) => package,
+            Manifest::Workspace { package } => package,
+        }
+    }
 }
 
 /// Representation of the `Cargo.toml` `package` section
@@ -53,7 +72,15 @@ impl CargoToml {
         let file_str = read_to_string(&self.meta.path)?;
         let mut document = file_str.parse::<toml_edit::DocumentMut>()?;
 
-        document["package"]["version"] = toml_edit::value(version.ver.to_string());
+        match self.manifest {
+            Manifest::Package(_) => {
+                document["package"]["version"] = toml_edit::value(version.ver.to_string());
+            }
+            Manifest::Workspace { .. } => {
+                document["workspace"]["package"]["version"] =
+                    toml_edit::value(version.ver.to_string());
+            }
+        }
 
         let mut file = OpenOptions::new()
             .write(true)
